@@ -1,93 +1,103 @@
 <template>
-    <view class="content" align="center">
+	<view class="content" align="center">
 
-        <view align="center">
-            <image class='esand_logo' src="../../static/esand_logo.png"></image>
-        </view>
+		<view align="center">
+			<image class='esand_logo' src="../../static/esand_logo.png"></image>
+		</view>
 
-        <view class="btn-row">
-            <button type="primary" class="primary item" @tap="processOcr(0)">身份证正面</button>
-        </view>
-
-        <view class="btn-row">
-            <button type="primary" class="primary item" @tap="processOcr(1)">身份证反面</button>
-        </view>
-
-        <img :src="image"/>
-        <div align="center">
-            <label>code: {{code}}</label>
-            <label>msg: {{msg}}</label>
-            <label>requestId: {{requestId}}</label>
-            <textarea :value="data"/>
-        </div>
-    </view>
+		<view class="btn-row">
+			<button v-on:click="getPhoneNumber()">一键登录</button>
+		</view>
+		<div align="center">
+			<textarea :value="msg" />
+		</div>
+	</view>
 </template>
+
 <script>
-	const esandOcrModule = uni.requireNativePlugin('Esand-OcrModule');
-	const APPCODE="换成你的APPCODE";
+		var MNOModule = uni.requireNativePlugin("Esand-MNOModule")
+		var secretKey;
+		var authUIConfigJson = "{\n" +
+                "    \"prefersStatusBarHidden\":true,\n" +
+                "    \"logoImgPath\":\"cscs\"\n" +
+                "}"
 	export default {
-	    data() {
-	        return {
-	            title: 'ocr证件识别',
-	            code: 'code',
-	            msg: 'msg',
-	            requestId: 'requestId',
-	            data: 'data',
-	            image: ''
-	        }
-	    },
-	    onLoad() {
-	    },
-	    methods: {
-	        processOcr(ocrType) {
-	            let that = this
-	            uni.request({
-	                // OCR 初始化后端地址, 为了您的数据安全，请保护好您的APPCODE, 最好把初始化这段逻辑放在服务器端。
-	                url: "http://edisocr.market.alicloudapi.com/ocr/init",
-	                method: 'POST',
-	                data: {
-	                    ocrType: ocrType
-	                },
-	                header: {
-	                    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-	                    // TODO APPCODE切勿泄漏，需替换成您的APPCODE
-	                    'Authorization': 'APPCODE ' + APPCODE,
-	                },
-	                success: (res) => {
-	                    console.log('网络请求成功' + JSON.stringify(res));
-	                    console.log("esandOcrModule : " + esandOcrModule)
-	                    esandOcrModule.processOcr({
-	                            ocrType: ocrType,
-	                            token: res.data.token,
-	                            from: 0,// 0：用相机拍摄，1：从相册中选取
-	                        },
-	                        result => {
-								/*
-							     *	      code：执行状态码，0000：正常，0001：本地执行异常，0002：服务器端返回异常，0003：用户取消了操作，0004：未授予权限
-								 *        msg：执行结果描述
-								 *        requestId：请求ID(用于定位问题)
-								 *        data：OCR结果（执行成功才有此字段）
-								 *        image：拍摄/选择的照片（B64编码的字符串）
-								 * */
-	                            that.code = result.code
-	                            that.msg = result.msg
-	                            that.requestId = result.requestId
-	                            that.image = "data:image/png;base64," + result.image
-	                            that.data = result.data
-	                        });
-	                },
-	                fail: (res) => {
-	                    console.log('网络请求失败' + JSON.stringify(res));
-	                    return JSON.stringify(res.data);
-	                },
-	                complete: (res) => {
-	                    console.log("执行完成");
-	                }
-	            });
-	        }
-	    }
+		data() {
+			return {
+				msg: "日志"
+			}
+		},
+		methods: {
+			getPhoneNumber: function(e) {
+				let platform=uni.getSystemInfoSync().platform
+				if(platform=='ios'){
+					authUIConfigJson = "{\"prefersStatusBarHidden\":true,\"logoImage\":\"logo\",\"checkBoxIsChecked\":true,\"logoWidth\":10.11123,\"logoHeight\":11.11,\"logoTopOffetY\":10.123,\"numberColor\":\"0x0000FF\",\"navTitle\":\"cscscscscs\",\"navTitleColor\":\"0x0000FF\",\"navTitleFont\":20}"
+					// 密钥是和APP绑定的，需要向服务提供商申请，可加微信：esand_info, ANDROID和IOS的密钥不一样
+					secretKey = "0wX1qyA0sPZh/sbTZPPGD8ZjlS2iVVVN+q/rLJ3H4brZvvuhUtD9NbJ+X0yB8RFlb0PJ+irtuW4B/WEOQcHrqO0vFvjV9DXotA7CgVi5YNyDp1RfevGNB5AZ6gdC7eWvv9POYC16F8MmvFS1Qh1Fno86d34zgjwxZkf1vpOJQKoMqNvYWkWkkeK+VeIxWb13IJ/mzYF5DPGxoZV/Zd2jZGy8ci8y4evlOMYczAjpfZAXOMCfylWytLuVbX0lQC71cCbdmzf2pBc="
+				} else if(platform=='android') {
+					let authUIConfig = {}
+					authUIConfig.navColor = "0x00000000"
+					authUIConfig.navTextColor = "0xFF000000"
+					authUIConfig.isLightColor = true
+					authUIConfig.navReturnImgWidth
+					authUIConfig.navReturnImgWidth = 206
+					authUIConfig.navReturnImgHeight = 20
+					authUIConfig.navReturnScaleType = 6
+					authUIConfig.navReturnImgPath = "back"
+					authUIConfig.logoImgPath = "static/wulianwang-.png"
+					authUIConfigJson = JSON.stringify(authUIConfig)
+					// 这里客制化一键登录授权页面,详细可参考: https://esandinfo.yuque.com/books/share/5ddd649d-2afa-48e6-bb07-633105dfec88?#
+					// authUIConfigJson = "{\"privacyState\":true,\"logoImgPath\":\"cscs\",\"navHidden\":true,\"iconLayoutOffSetY\":600,\"iconLayoutWidth\":150}"
+					// 密钥是和APP绑定的，需要向服务提供商申请，可加微信：esand_info, ANDROID和IOS的密钥不一样
+					secretKey = "fJutUWfS11a/PORxlijcowb+T1b1SrxGC4HqAvyv1q5ziqxK1810gJO8Jn2t0sAnAedRCDWuqRaEtL5LPo8te1JgaQhjf1oR3ByguahdedhWD8wbAdSlRqdLNIChpi584v/zEmU+o3exWlEuBqTnsLJBllR33AAO5MqdDXD+ct9tLKDCP+dRCPF6SKAhmkjT9KpFkAt+L3gcUYVolR51sFOIXYB/6TTWLdLbGbL4t0m1yvhBT7XF28Wug8I08MfcYSfXwMsmm3vajqkK4RqXN05ds+6APhAEXX0bKvRZQj5pKblW3xKM8A=="
+				}
+				MNOModule.getPhoneNum({
+					'secretKey': secretKey,
+					'authUIConfigJson': authUIConfigJson
+
+				}, (ret) => {
+					if (ret.code == '0') {
+						let dataBody = ret.data
+						let dataBodyJson = JSON.parse(dataBody)
+						uni.request({
+							url: 'http://edismno.market.alicloudapi.com/mno/getMobile',
+							method: 'POST',
+							data: {
+								'deviceModel': dataBodyJson.deviceModel,
+								'packageId':dataBodyJson.packageId,
+								'platform':dataBodyJson.platform,
+								'token':dataBodyJson.token,
+								'transId':dataBodyJson.transId,
+								'appName':dataBodyJson.appName,
+								'phoneNum':dataBodyJson.phoneNum
+							},
+							header: {
+								// APPCODE是阿里云网关密钥，不建议直接在APP端直接请求阿里云网关，因为会泄漏APPCODE, 可以把这段逻辑写到服务器端，然后再请求服务器
+								'Authorization': 'APPCODE 填入您自己的APPCODE',  // appcode的获取可参考： https://esandinfo.yuque.com/docs/share/13ad611e-b9c3-4cf8-a9a8-fe23a419312e?# 《如何获取APPCODE/APPKEY&APPSECRET》
+								'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+							},
+							success: (res) => {
+								res.header
+								var rspMsg = JSON.stringify(res.data)
+								console.log('网络请求成功' + rspMsg)
+								this.msg = JSON.stringify(rspMsg);
+								uni.showModal({
+									title: "获取结果成功",
+									content: JSON.stringify(res.data),
+								})
+							}
+						})
+					}else{
+						console.log(ret)
+						this.msg = JSON.stringify(ret);
+					}
+				})
+			},
+		}
 	}
 </script>
+
+
 <style>
     .content {
         position: absolute;
